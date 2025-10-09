@@ -1,0 +1,13 @@
+---
+title: Card
+---
+
+Имя: **Card**
+
+The short description is a simple usage example.:
+
+```svelte
+<script>
+  import Card from '$lib/components/Card.svelte';
+</script>
+

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Button from '../lib/components/Button.svelte';
+	import Button from '../../lib/components/Button.svelte';
 
 	let label = 'Click me';
 	let variant: 'primary' | 'secondary' | 'ghost' = 'primary';
