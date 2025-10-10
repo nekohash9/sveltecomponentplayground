@@ -74,7 +74,7 @@
 		<div class="actions" role="group" aria-label="Actions">
 			<button class="btn" on:click={copyCode} aria-label="Copy component code">
 				<!-- simple copy icon (inline SVG) -->
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden='false'>
 					<path
 						d="M16 2H7a2 2 0 0 0-2 2v11"
 						stroke="currentColor"

@@ -16,7 +16,12 @@
 	export let size: 'sm' | 'md' | 'lg' = 'md';
 	export let disabled: boolean = false;
 
-	$: classes = ['btn', `btn--${variant}`, `btn--${size}`, disabled ? 'btn--disabled' : '']
+	$: classes = [
+		'btn',
+		`btn--${variant}`,
+		`btn--${size}`,
+		disabled ? 'btn--disabled' : ''
+	]
 		.filter(Boolean)
 		.join(' ');
 </script>
