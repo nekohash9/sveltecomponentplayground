@@ -15,7 +15,7 @@
     "verbatimModuleSyntax": true,
 
     //under -- to 
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
   },
   "include": ["src/**/*", "svelte.config.js"]
 }
