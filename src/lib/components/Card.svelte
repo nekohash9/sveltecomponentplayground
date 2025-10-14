@@ -19,13 +19,14 @@
 	export let variant: 'default' | 'featured' = 'default';
 	export let size: 'sm' | 'md' | 'lg' = 'md';
 	export let disabled: boolean = false;
-
 	$: classes = [
 		'card',
 		variant ? `card--${variant}` : '',
 		size ? `card--${size}` : '',
 		disabled ? 'card--disabled' : ''
-	].filter(Boolean).join(' ');
+	]
+		.filter(Boolean)
+		.join(' ');
 </script>
 
 <div class={classes} aria-hidden={disabled} role="group" aria-label={title || 'Card'}>
@@ -48,22 +49,47 @@
 	.card {
 		border: 1px solid #e0e0e0;
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 		background: #fff;
 		overflow: hidden;
 		max-width: 100%;
-		transition: box-shadow .2s;
+		transition: box-shadow 0.2s;
 	}
-	.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+	.card:hover {
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+	}
 
-	.card-image { width:100%; height:180px; object-fit:cover; display:block; }
-	.card-content { padding:1rem; }
-	.card-title { margin:0 0 .5rem 0; font-size:1.25rem; font-weight:600; }
-	.card-subtitle { margin:0 0 1rem 0; color:#666; font-size:1rem; }
+	.card-image {
+		width: 100%;
+		height: 180px;
+		object-fit: cover;
+		display: block;
+	}
+	.card-content {
+		padding: 1rem;
+	}
+	.card-title {
+		margin: 0 0 0.5rem 0;
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+	.card-subtitle {
+		margin: 0 0 1rem 0;
+		color: #666;
+		font-size: 1rem;
+	}
 
-	/* варианты и размеры (пример) */
-	.card--featured { border-color: rgba(11,132,255,.12); }
-	.card--sm .card-image { height:120px; }
-	.card--lg .card-image { height:240px; }
-	.card--disabled { opacity:.6; pointer-events:none; }
+	.card--featured {
+		border-color: rgba(11, 132, 255, 0.12);
+	}
+	.card--sm .card-image {
+		height: 120px;
+	}
+	.card--lg .card-image {
+		height: 240px;
+	}
+	.card--disabled {
+		opacity: 0.6;
+		pointer-events: none;
+	}
 </style>

@@ -203,7 +203,7 @@
 	}
 
 	.doc-card {
-		background: var(--card); 
+		background: var(--card);
 		border-radius: var(--radius);
 		box-shadow: var(--shadow);
 		padding: 16px;
