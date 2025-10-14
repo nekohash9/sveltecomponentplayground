@@ -1,160 +1,140 @@
 <script lang="ts">
-	import Button from '../../lib/components/Button.svelte';
+	const modules = import.meta.glob('/src/lib/components/*.svelte', { eager: true }) as Record<
+		string,
+		any
+	>;
 
-	let label = 'Click me';
-	let variant: 'primary' | 'secondary' | 'ghost' = 'primary';
-	let size: 'sm' | 'md' | 'lg' = 'md';
-	let disabled = false;
-	let copied = false;
+	type Comp = { name: string; Component: any; meta?: Record<string, any> };
 
-	function generateCode() {
-		const attrs = [
-			`label="${String(label).replace(/"/g, '&quot;')}"`,
-			variant !== 'primary' ? `variant="${variant}"` : '',
-			size !== 'md' ? `size="${size}"` : '',
-			disabled ? 'disabled' : ''
-		]
-			.filter(Boolean)
-			.join(' ');
-		return `<Button ${attrs} />`;
+	const comps: Comp[] = Object.entries(modules).map(([path, mod]) => {
+		const filename = path.split('/').pop() || path;
+		const name = (mod.meta && mod.meta.name) || filename.replace('.svelte', '');
+		return { name, Component: mod.default, meta: mod.meta };
+	});
+
+	let state: Record<string, Record<string, any>> = {};
+	for (const c of comps) {
+		const props = c.meta?.props || {};
+		state[c.name] = {};
+		for (const [k, v] of Object.entries(props)) {
+			state[c.name][k] = v?.default ?? (v?.type === 'boolean' ? false : '');
+		}
 	}
 
-	async function copyCode() {
-		if (typeof navigator === 'undefined' || !navigator.clipboard) {
-			alert('Clipboard API unavailable.');
-			return;
-		}
+	function generateCode(name: string, props: Record<string, any>) {
+		const attrs = Object.entries(props)
+			.map(([k, v]) => {
+				if (typeof v === 'boolean') return v ? k : '';
+				if (typeof v === 'string') return `${k}="${String(v).replace(/"/g, '&quot;')}"`;
+				return `${k}={${JSON.stringify(v)}}`;
+			})
+			.filter(Boolean)
+			.join(' ');
+		return `<${name}${attrs ? ' ' + attrs : ''} />`;
+	}
+
+	async function copy(text: string) {
+		if (typeof navigator === 'undefined' || !navigator.clipboard) return;
 		try {
-			await navigator.clipboard.writeText(generateCode());
-			copied = true;
-			setTimeout(() => (copied = false), 1200);
-		} catch (e) {
-			alert('Copy failed: ' + e);
-		}
+			await navigator.clipboard.writeText(text);
+		} catch {}
 	}
 </script>
 
-<div class="wrap">
-	<aside class="sidebar" aria-labelledby="controls-title">
-		<div>
-			<h2 id="controls-title" class="title">Controls</h2>
-			<p class="subtitle">Change the props and see the result in real time.</p>
-		</div>
-
-		<fieldset class="field">
-			<label for="labelInput"><span>Label</span></label>
-			<input id="labelInput" type="text" bind:value={label} />
-		</fieldset>
-
-		<fieldset class="field">
-			<label for="variantSelect"><span>Variant</span></label>
-			<select id="variantSelect" bind:value={variant}>
-				<option value="primary">primary</option>
-				<option value="secondary">secondary</option>
-				<option value="ghost">ghost</option>
-			</select>
-		</fieldset>
-
-		<fieldset class="field">
-			<label for="sizeSelect"><span>Size</span></label>
-			<select id="sizeSelect" bind:value={size}>
-				<option value="sm">sm</option>
-				<option value="md">md</option>
-				<option value="lg">lg</option>
-			</select>
-		</fieldset>
-
-		<div class="field">
-			<label class="checkbox-row">
-				<input id="disabledCheckbox" type="checkbox" bind:checked={disabled} />
-				<span>Disabled</span>
-			</label>
-		</div>
-
-		<div class="actions" role="group" aria-label="Actions">
-			<button class="btn" on:click={copyCode} aria-label="Copy component code">
-				<!-- simple copy icon (inline SVG) -->
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden='false'>
-					<path
-						d="M16 2H7a2 2 0 0 0-2 2v11"
-						stroke="currentColor"
-						stroke-width="1.6"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-					<rect
-						x="9"
-						y="6"
-						width="12"
-						height="14"
-						rx="2"
-						stroke="currentColor"
-						stroke-width="1.6"
-					/>
-				</svg>
-				Copy
-			</button>
-			{#if copied}
-				<div class="copied" role="status" aria-live="polite">Copied!</div>
-			{/if}
-		</div>
+<div class="container-root">
+	<aside class="left">
+		<div class="brand">Components</div>
+		<nav class="comp-list">
+			{#each comps as c}
+				<button
+					class="comp-item"
+					on:click={() =>
+						window.scrollTo({
+							top: document.getElementById(c.name)?.offsetTop - 20 || 0,
+							behavior: 'smooth'
+						})}
+				>
+					{c.name}
+				</button>
+			{/each}
+		</nav>
 	</aside>
 
-	<main class="main">
-		<section class="panel">
-			<div class="meta-row">
-				<div class="meta-left">
-					<strong style="font-size:16px">Preview</strong>
-					<div style="font-size:13px; color:var(--muted)">Interactive live preview</div>
-				</div>
-				<div style="font-size:13px; color:var(--muted)">Rendered by local component</div>
-			</div>
+	<main class="content">
+		<h1 class="page-title">Playground</h1>
 
-			<div style="height:14px"></div>
+		<div class="grid">
+			{#each comps as c (c.name)}
+				<section class="doc-card" id={c.name}>
+					<header class="doc-head">
+						<div class="title-block">
+							<div class="comp-title">{c.name}</div>
+							<div class="comp-sub">Svelte · local</div>
+						</div>
+						<button class="copy-btn" on:click={() => copy(generateCode(c.name, state[c.name]))}
+							>Copy</button
+						>
+					</header>
 
-			<div class="preview-row">
-				<div class="preview-box" aria-live="polite">
-					<!-- вариант: передаём текст как слот — всегда обновляется -->
-					<Button {variant} {size} {disabled}>
-						{label}
-					</Button>
-				</div>
+					<div class="doc-body">
+						<div class="preview">
+							<svelte:component this={c.Component} {...state[c.name]}>
+								{#if c.meta?.props && c.meta.props.label}
+									{state[c.name].label}
+								{/if}
+							</svelte:component>
+						</div>
 
-				<div style="flex:1; min-width:260px">
-					<div style="display:flex; justify-content:space-between; align-items:center;">
-						<div style="font-weight:600">Component</div>
-						<div style="color:var(--muted); font-size:13px">Svelte · local</div>
+						<div class="controls-code">
+							<div class="controls">
+								{#if c.meta?.props}
+									{#each Object.entries(c.meta.props) as [propName, propMeta]}
+										<label class="control-row">
+											<span class="control-label">{propName}</span>
+											{#if propMeta.type === 'boolean'}
+												<input type="checkbox" bind:checked={state[c.name][propName]} />
+											{:else if propMeta.type === 'enum' && propMeta.options}
+												<select bind:value={state[c.name][propName]}>
+													{#each propMeta.options as opt}
+														<option value={opt}>{opt}</option>
+													{/each}
+												</select>
+											{:else}
+												<input type="text" bind:value={state[c.name][propName]} />
+											{/if}
+										</label>
+									{/each}
+								{/if}
+							</div>
+
+							<pre class="code">{generateCode(c.name, state[c.name])}</pre>
+						</div>
 					</div>
-
-					<div class="code-block" role="region" aria-label="Component code">
-						{generateCode()}
-					</div>
-				</div>
-			</div>
-		</section>
+				</section>
+			{/each}
+		</div>
 	</main>
 </div>
 
 <style>
 	:global(:root) {
-		--bg: #0f172a;
-		--surface: #0b1220;
-		--muted: #94a3b8;
+		--bg: #f8fafc;
 		--card: #ffffff;
+		--muted: #6b7280;
 		--accent: #0b84ff;
-		--radius: 12px;
-		--shadow: 0 6px 20px rgba(2, 6, 23, 0.6);
-		--gap: 20px;
+		--radius: 10px;
+		--shadow: 0 4px 14px rgba(2, 6, 23, 0.04);
+		--container: 1100px;
 	}
 
-	/* Page layout */
-	.wrap {
+	.container-root {
 		display: grid;
-		grid-template-columns: 320px 1fr;
-		gap: var(--gap);
-		padding: 32px;
-		min-height: calc(100vh - 40px);
-		background: linear-gradient(180deg, #f7fafc 0%, #eef2ff 100%);
+		grid-template-columns: 220px 1fr;
+		gap: 24px;
+		padding: 24px;
+		min-height: 100vh;
+		background: linear-gradient(180deg, #fff, var(--bg));
+		box-sizing: border-box;
 		font-family:
 			Inter,
 			ui-sans-serif,
@@ -164,137 +144,179 @@
 			Roboto,
 			'Helvetica Neue',
 			Arial;
-		color: #0f172a;
 	}
 
-	/* Sidebar (controls) */
-	.sidebar {
-		background: var(--card);
-		border-radius: var(--radius);
-		padding: 20px;
-		box-shadow: var(--shadow);
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
+	.left {
 		position: sticky;
 		top: 24px;
 		height: fit-content;
 	}
 
-	.title {
-		margin: 0 0 6px;
-		font-size: 18px;
+	.brand {
 		font-weight: 700;
-		letter-spacing: -0.01em;
+		font-size: 14px;
+		margin-bottom: 12px;
+		color: #111827;
 	}
-	.subtitle {
-		margin: 0 0 12px;
-		font-size: 13px;
+
+	.comp-list {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.comp-item {
+		text-align: left;
+		padding: 8px 10px;
+		border-radius: 8px;
+		border: none;
+		background: transparent;
+		color: var(--muted);
+		cursor: pointer;
+		font-size: 14px;
+		transition:
+			background 0.15s,
+			color 0.15s;
+	}
+	.comp-item:hover {
+		background: rgba(11, 132, 255, 0.06);
+		color: #0f172a;
+	}
+
+	.content {
+		max-width: var(--container);
+		margin: 0 auto;
+		width: 100%;
+	}
+
+	.page-title {
+		margin: 0 0 8px 0;
+		font-size: 20px;
+		color: #111827;
+	}
+
+	.grid {
+		display: grid;
+		gap: 12px;
+		grid-auto-rows: minmax(120px, auto);
+		grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+	}
+
+	.doc-card {
+		background: var(--card);
+		border-radius: var(--radius);
+		box-shadow: var(--shadow);
+		padding: 16px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		border: 1px solid rgba(15, 23, 42, 0.04);
+	}
+
+	.doc-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.title-block {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+	}
+	.comp-title {
+		font-weight: 600;
+		font-size: 15px;
+		color: #111827;
+	}
+	.comp-sub {
+		font-size: 12px;
 		color: var(--muted);
 	}
 
-	fieldset {
-		border: 0;
-		padding: 0;
-		margin: 0;
-	}
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		margin-bottom: 10px;
-	}
-	label span {
-		font-size: 13px;
-		color: #0f172a;
-		font-weight: 600;
-	}
-	input[type='text'],
-	select {
-		appearance: none;
-		border: 1px solid #e6eef8;
-		padding: 10px 12px;
-		border-radius: 8px;
-		background: #fff;
-		outline: none;
-		font-size: 14px;
-	}
-	input[type='text']:focus,
-	select:focus {
-		box-shadow: 0 0 0 4px rgba(11, 132, 255, 0.12);
-		border-color: var(--accent);
-	}
-
-	.checkbox-row {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		font-size: 14px;
-	}
-
-	.actions {
-		display: flex;
-		gap: 8px;
-		margin-top: 6px;
-	}
-
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6rem;
-		padding: 8px 12px;
-		background: var(--accent);
-		color: white;
-		border: none;
-		border-radius: 8px;
+	.copy-btn {
+		background: transparent;
+		border: 1px solid rgba(11, 132, 255, 0.2);
+		color: var(--accent);
+		padding: 5px 9px;
+		border-radius: 6px;
 		cursor: pointer;
-		font-weight: 600;
-		font-size: 14px;
+		font-weight: 500;
+		font-size: 13px;
+		transition: all 0.15s;
 	}
-	.btn:active {
-		transform: translateY(1px);
-	}
-	.btn:focus {
-		box-shadow: 0 0 0 4px rgba(11, 132, 255, 0.12);
-		outline: none;
+	.copy-btn:hover {
+		background: rgba(11, 132, 255, 0.05);
+		border-color: rgba(11, 132, 255, 0.4);
 	}
 
-	/* Main area */
-	.main {
+	.doc-body {
+		display: flex;
+		gap: 14px;
+		align-items: flex-start;
+		flex-wrap: wrap;
+	}
+
+	.preview {
+		flex: 0 0 auto;
+		min-width: 160px;
+		min-height: 72px;
+		background: linear-gradient(180deg, #fff, #f6f9ff);
+		border-radius: 8px;
+		padding: 18px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid rgba(15, 23, 42, 0.05);
+	}
+
+	.controls-code {
 		display: flex;
 		flex-direction: column;
-		gap: 18px;
+		gap: 8px;
+		flex: 1;
+		min-width: 220px;
 	}
 
-	.panel {
-		background: var(--card);
-		border-radius: var(--radius);
-		padding: 22px;
-		box-shadow: var(--shadow);
-	}
-
-	.preview-row {
+	.controls {
 		display: flex;
-		gap: 20px;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.control-row {
+		display: flex;
+		gap: 8px;
 		align-items: center;
 		flex-wrap: wrap;
 	}
 
-	.preview-box {
-		padding: 28px;
-		background: linear-gradient(180deg, #fbfdff, #f6f9ff);
-		border-radius: 10px;
-		border: 1px solid rgba(15, 23, 42, 0.04);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
+	.control-label {
+		width: 110px;
+		color: var(--muted);
+		font-size: 13px;
+		word-break: break-word;
+		line-height: 1.3;
 	}
 
-	.code-block {
-		margin-top: 12px;
+	input[type='text'],
+	select {
+		flex: 1;
+		padding: 7px 10px;
+		border-radius: 6px;
+		border: 1px solid rgba(15, 23, 42, 0.06);
+		outline: none;
+		font-size: 13px;
+		background: white;
+	}
+	input[type='checkbox'] {
+		width: 16px;
+		height: 16px;
+	}
+
+	.code {
 		background: #0b1220;
 		color: #e6eef8;
-		padding: 14px;
+		padding: 10px;
 		border-radius: 8px;
 		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;
 		font-size: 13px;
@@ -302,33 +324,16 @@
 		overflow: auto;
 	}
 
-	.meta-row {
-		display: flex;
-		justify-content: space-between;
-		gap: 12px;
-		align-items: center;
-	}
-	.meta-left {
-		color: var(--muted);
-		font-size: 13px;
-	}
-
-	/* small states */
-	.copied {
-		color: #10b981;
-		font-weight: 700;
-	}
-
-	/* responsive */
 	@media (max-width: 900px) {
-		.wrap {
+		.container-root {
 			grid-template-columns: 1fr;
 			padding: 16px;
 		}
-		.sidebar {
+		.left {
 			position: relative;
 			top: auto;
-			width: 100%;
+			order: 0;
+			margin-bottom: 12px;
 		}
 	}
 </style>
