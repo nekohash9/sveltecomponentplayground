@@ -1,4 +1,22 @@
-<script>
+<script context="module" lang="ts">
+    export const meta = {
+        name: 'Card',
+        props: {
+            title: {type: "string", default: "Card title"},
+            subtitle: {type: "string", default: "Card subtitle"},
+            image: {type: "image", default: "image"},
+            variant: {type: 'enum'},
+            size: { type: 'enum', options: ['sm', 'md', 'lg'], default: 'md' },
+			disabled: { type: 'boolean', default: false }
+        }
+    }
+
+
+
+</script>
+
+<script lang="ts">
+
     export let title = "";
     export let subtitle = "";
     export let image = "";

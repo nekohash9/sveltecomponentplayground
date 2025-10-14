@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Button from '../../lib/components/Button.svelte';
+	import Card from '../../lib/components/Card.svelte';
+
 
 	let label = 'Click me';
 	let variant: 'primary' | 'secondary' | 'ghost' = 'primary';
@@ -32,6 +34,9 @@
 			alert('Copy failed: ' + e);
 		}
 	}
+
+	
+	
 </script>
 
 <div class="wrap">
@@ -321,7 +326,7 @@
 
 	/* responsive */
 	@media (max-width: 900px) {
-		.wrap {
+		.wrap-button {
 			grid-template-columns: 1fr;
 			padding: 16px;
 		}
